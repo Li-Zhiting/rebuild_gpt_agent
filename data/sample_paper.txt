@@ -1,0 +1,5 @@
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with explicit temporal dependency handling.
+In experiments, the authors compare with several baselines and show improved performance on multiple benchmarks.
+However, the paper may still have limitations in robustness evaluation, real-world deployment, and broader generalization.
