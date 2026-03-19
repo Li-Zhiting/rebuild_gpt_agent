@@ -1,0 +1,55 @@
+abstract:Score matching estimators have gained widespread attention in recent years partly
+because they are free from calculating the integral of normalizing constant, thereby
+addressing the computational challenges in maximum likelihood estimation (MLE).
+Some existing works have proposed score matching estimators for point processes.
+However, this work demonstrates that the incompleteness of the estimators proposed in those works renders them applicable only to specific problems, and they
+fail for more general point processes. To address this issue, this work introduces
+the weighted score matching estimator to point processes. Theoretically, we prove
+the consistency of our estimator and establish its rate of convergence. Experimental results indicate that our estimator accurately estimates model parameters on
+synthetic data and yields results consistent with MLE on real data. In contrast,
+existing score matching estimators fail to perform effectively.
+
+introduction:Point processes are a class of statistical models used to characterize event occurrences. Typical models
+include Poisson processes [9] and Hawkes processes [3]. Their applications span various fields such as
+seismology [16; 17], finance [1; 4], criminology [15], and neuroscience [11; 26]. In the field of point
+processes, maximum likelihood estimation (MLE) has been a conventional estimator. However, MLE
+has an inherent limitation: it requires the computation of the normalizing constant, which corresponds
+to the intensity integral term in the likelihood. Except for simple cases, calculating the intensity
+integral analytically is generally infeasible. This necessitates the use of numerical integration methods
+like Monte Carlo or quadrature for approximating the computation. This introduces approximation
+errors, and more importantly, for high-dimensional problems, numerical integration encounters the
+curse of dimensionality, rendering training infeasible.
+
+To address this issue, prior research has introduced the concept of score matching (SM) [5] to the field
+of point processes. For instance, [18] derived the application of SM to the estimation of traditional
+statistical Poisson processes. Furthermore, [24] extended the use of SM to the estimation of deep
+covariate spatio-temporal point processes. [10] also generalized the application of SM to Hawkes
+processes. These works have greatly advanced the utilization of SM for point processes. However, in
+practical applications, we have found that these estimators only work for specific point processes.
+For more general cases, these estimators cannot accurately estimate model parameters, even for
+some simple statistical point processes. One of the core contribution of this work is to theoretically
+demonstrate the incompleteness of the estimators proposed in the aforementioned studies.
+
+The incompleteness of the estimators in the aforementioned studies stems from the transition from
+explicit SM to implicit SM. The explicit SM estimates model parameters by minimizing the expected
+distance between the gradient of the log-density of the model and the gradient of the log-density of
+the data. However, we cannot directly minimize the above objective function since it depends on
+the unknown data distribution. To facilitate solving, we need to convert the above explicit SM to
+implicit SM by using a trick of integration by parts, provided that some regularity conditions are
+satisfied [5]. In [18; 24; 10], they assume that the required regularity conditions are satisfied in their
+point process models and directly employ the implicit SM objective. However, as demonstrated in
+Section 3, the required regularity conditions cannot be met for general point processes. This implies
+that the concise implicit SM objectives (Equation (2) in [18], Equation (10) in [24], Equation (4) in
+[10]) are incomplete, and they cannot accurately estimate parameters for general point processes.
+
+To address this issue, this work introduces a (autoregressive) weighted score matching (WSM)
+estimator that can be applied to more general point processes. WSM eliminates the intractable terms
+in SM objective by adding a weight function that takes zero at the boundary of the integration region.
+Compared to previous work on WSM [6; 22; 12], we are the first work to apply WSM on a stochastic
+process where the dimension NT is also random. This stochasticity in dimensionality poses greater
+challenges to the derivation, requiring special treatment to address this issue.
+Specifically, we make following contributions: (1) We theoretically demonstrate that implicit (autoregressive) SM estimators in [18; 24; 10] are incomplete because the required regularity conditions
+cannot be satisfied for general point processes. (2) To address this issue, we propose a (autoregressive) WSM estimator that is applicable to general point processes. Theoretically, we establish its
+consistency and convergence rate. (3) In experiments, we confirm that on synthetic data, (autoregressive) WSM successfully recovers the ground-truth parameters; on real data, (autoregressive) WSM
+estimates results consistent with MLE; while existing (autoregressive) SM estimator fails in both
+scenarios.
