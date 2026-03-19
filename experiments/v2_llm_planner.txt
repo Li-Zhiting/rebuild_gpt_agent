@@ -1,0 +1,36 @@
+# v2: LLM Planner (Qwen API)
+
+## Query 1
+Input: 请总结这篇论文的核心贡献
+Tool: summary
+Reason: 用户明确要求总结论文的核心贡献
+
+## Query 2
+Input: 请比较两篇论文的方法差异
+Tool: compare
+Reason: 对比分析任务
+
+## Observation
+- planner 能正确识别明确意图
+- 暂未测试模糊 query
+
+python main.py --paper data/sample_paper.txt --query "这篇论文有哪些值得改进的 地方"
+[DEBUG] planner selected: critique, reason=用户明确询问论文的改进之处，属于对论文局限性与不足的批判性分析
+=== Plan ===
+Tool: critique
+
+=== Answer ===
+【批判性分析】
+- 可能的优点：方法目标明确，具备一定系统性。
+- 可能的局限1：是否存在数据集或任务范围过窄的问题？
+- 可能的局限2：是否缺少更强 baseline 或消融实验？
+- 可能的局限3：是否缺少真实场景部署或鲁棒性验证？
+
+【证据片段】
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with exp
+
+## Conclusion
+- planner 在明确指令下表现稳定
+- 目前仅支持单工具选择
