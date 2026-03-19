@@ -1,0 +1,31 @@
+tool: compare
+
+============= v1 只是修改 memory 让其可以接受1-2个source 的text 
+python memory.py 
+=== Single paper: source='paper_a' ===
+['This paper studies time series forecasting methods for retail demand. We compare classical baselines and neural forecasting models.']
+
+=== Two papers: source='both' ===
+['This paper studies time series forecasting methods for retail demand. We compare classical baselines and neural forecasting models.', 'This paper focuses on representation learning for sensor data. It includes transfer learning experiments and downstream tasks.']
+
+problem：
+compare.py现在的run()方法签名是这样的：
+pythondef run(self, query, doc_memory, conv_memory) -> ToolResult
+它拿到doc_memory之后，只是调用doc_memory.top_k(query, k=4)，没有指定source，默认是"both"。
+
+这意味着什么问题？
+用户传了两篇论文，想对比方法差异。top_k从两篇论文各取了一些chunk混在一起，但返回的chunks里没有任何标记说明哪个chunk来自哪篇论文。
+然后compare工具把这些chunk直接塞进输出模板——会导致把两篇文章放在一起进行分析，以及compare的对象可能变成了文章a的方法和文章b的baseline进行比较，也就是chunk来源信息丢失了，compare根本不知道在对比什么。
+
+============= v2 修改 memory 和compare ，让其可以标记每个chunk的source 来源
+设计思路：
+- DocumentMemory.top_k() 的返回值改为 List[Dict[str, str]]（每项形如 {"source": "paper_a"|"paper_b", "chunk": "..."}"），这样在 source="both" 时每个片段都自带来源标记且无需改动现有检索逻辑。
+- compare.py 在拿到结果后先按 source 分成 chunks_a 和 chunks_b 两组，再从两组各取前 N 段（不足就用各自第一段兜底）按同一维度并排拼接成“paper_a vs paper_b”的四段对比文本。
+
+
+python agent/memory.py
+=== Single paper: source='paper_a' ===
+[{'source': 'paper_a', 'chunk': 'This paper studies time series forecasting methods for retail demand. We compare classical baselines and neural forecasting models.'}]
+
+=== Two papers: source='both' ===
+[{'source': 'paper_a', 'chunk': 'This paper studies time series forecasting methods for retail demand. We compare classical baselines and neural forecasting models.'}, {'source': 'paper_b', 'chunk': 'This paper focuses on representation learning for sensor data. It includes transfer learning experiments and downstream tasks.'}]

@@ -3,7 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List
 
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, TypedDict
+
+
+class RetrievedChunk(TypedDict):
+    source: Literal["paper_a", "paper_b"]
+    chunk: str
 
 
 @dataclass(slots=True)
@@ -119,33 +124,45 @@ class DocumentMemory:
         query: str,
         k: int = 3,
         source: Literal["paper_a", "paper_b", "both"] = "both"
-    ) -> List[str]:
+    ) -> List[RetrievedChunk]:
         if source not in {"paper_a", "paper_b", "both"}:
             raise ValueError("source must be one of: 'paper_a', 'paper_b', 'both'")
 
         query_terms = {x.strip().lower() for x in query.split() if x.strip()}
 
         if source == "paper_a":
-            candidate_chunks = self.chunks.get("paper_a", [])
+            candidate_chunks = [
+                {"source": "paper_a", "chunk": chunk}
+                for chunk in self.chunks.get("paper_a", [])
+            ]
         elif source == "paper_b":
-            candidate_chunks = self.chunks.get("paper_b", [])
+            candidate_chunks = [
+                {"source": "paper_b", "chunk": chunk}
+                for chunk in self.chunks.get("paper_b", [])
+            ]
         else:
             candidate_chunks = (
-                self.chunks.get("paper_a", []) +
-                self.chunks.get("paper_b", [])
+                [
+                    {"source": "paper_a", "chunk": chunk}
+                    for chunk in self.chunks.get("paper_a", [])
+                ] +
+                [
+                    {"source": "paper_b", "chunk": chunk}
+                    for chunk in self.chunks.get("paper_b", [])
+                ]
             )
 
         if not candidate_chunks:
             return []
 
         scored = []
-        for chunk in candidate_chunks:
-            chunk_terms = {x.strip().lower() for x in chunk.split() if x.strip()}
+        for item in candidate_chunks:
+            chunk_terms = {x.strip().lower() for x in item["chunk"].split() if x.strip()}
             score = len(query_terms & chunk_terms)
-            scored.append((score, chunk))
+            scored.append((score, item))
 
         scored.sort(key=lambda x: x[0], reverse=True)
-        return [chunk for _, chunk in scored[:k]]
+        return [item for _, item in scored[:k]]
 
 
 if __name__ == "__main__":
