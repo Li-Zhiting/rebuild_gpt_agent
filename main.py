@@ -22,8 +22,8 @@ def main() -> None:
     output = agent.ask(args.query)
 
     print("=== Plan ===")
-    print(f"Intent: {output.plan_intent}")
-    print(f"Steps: {output.plan_steps}")
+    # print(f"Intent: {output.plan_intent}")
+    # print(f"Steps: {output.plan_steps}")
     print(f"Tool: {output.tool_name}")
     print("\n=== Answer ===")
     print(output.answer)
