@@ -13,10 +13,9 @@ from tools.summarize import SummarizeTool
 
 @dataclass(slots=True)
 class AgentOutput:
-    plan_intent: str
-    plan_steps: list[str]
     tool_name: str
     answer: str
+    plan_reason: str
 
 
 class ResearchPaperAgent:
@@ -38,15 +37,19 @@ class ResearchPaperAgent:
         )
 
     def ask(self, query: str) -> AgentOutput:
-        self.conv_memory.add("user", query)
         plan = self.planner.make_plan(query)
-        print(f"DEBUG plan: {plan}")
-        tool = self.tools[plan.tool_name]
+        print(f"[DEBUG] planner selected: {plan.tool_name}, reason={plan.reason}")
+
+        tool = self.tools.get(plan.tool_name)
+        if tool is None:
+            raise ValueError(f"Unknown tool: {plan.tool_name}")
+
         tool_result = tool.run(query, self.doc_memory, self.conv_memory)
+
         self.conv_memory.add("assistant", tool_result.content)
+
         return AgentOutput(
-            plan_intent=plan.intent,
-            plan_steps=plan.steps,
-            tool_name=tool_result.tool_name,
+            tool_name=plan.tool_name,
             answer=tool_result.content,
-        )
+            plan_reason=plan.reason,
+            )
