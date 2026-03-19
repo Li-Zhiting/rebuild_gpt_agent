@@ -23,8 +23,10 @@ class ResearchPaperAgent:
         self.planner = Planner()
         self.conv_memory = ConversationMemory(turn_limit=settings.history_turn_limit)
         self.doc_memory = DocumentMemory()
+        summarize_tool = SummarizeTool()
         self.tools: Dict[str, object] = {
-            "summarize": SummarizeTool(),
+            "summary": summarize_tool,
+            #"summarize": summarize_tool,
             "critique": CritiqueTool(),
             "compare": CompareTool(),
         }

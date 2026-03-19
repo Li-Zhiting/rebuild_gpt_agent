@@ -13,7 +13,8 @@ class CritiqueTool:
         doc_memory: DocumentMemory,
         conv_memory: ConversationMemory,
     ) -> ToolResult:
-        chunks = doc_memory.top_k(query, k=3)
+        retrieved = doc_memory.top_k(query, k=3)
+        chunks = [item["chunk"] for item in retrieved]
         content = (
             "【批判性分析】\n"
             "- 可能的优点：方法目标明确，具备一定系统性。\n"

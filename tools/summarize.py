@@ -5,7 +5,7 @@ from tools.base import ToolResult
 
 
 class SummarizeTool:
-    name = "summarize"
+    name = "summary"
 
     def run(
         self,
@@ -13,7 +13,8 @@ class SummarizeTool:
         doc_memory: DocumentMemory,
         conv_memory: ConversationMemory,
     ) -> ToolResult:
-        chunks = doc_memory.top_k(query, k=3)
+        retrieved = doc_memory.top_k(query, k=3)
+        chunks = [item["chunk"] for item in retrieved]
         content = (
             "【结构化总结】\n"
             "1. 研究问题：\n"
