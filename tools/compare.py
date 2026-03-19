@@ -20,6 +20,12 @@ class CompareTool:
         if not chunks_a and not chunks_b:
             return ToolResult(tool_name=self.name, content="【对比分析】\n未检索到相关内容。")
 
+        if not chunks_b:
+            return ToolResult(
+                tool_name=self.name,
+                content="【对比分析】\n当前仅检测到一篇论文内容；请提供 paper_a 和 paper_b 两篇论文后再进行对比。",
+            )
+
         fallback_a = chunks_a[0] if chunks_a else ""
         fallback_b = chunks_b[0] if chunks_b else ""
 

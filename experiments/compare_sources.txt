@@ -29,3 +29,9 @@ python agent/memory.py
 
 === Two papers: source='both' ===
 [{'source': 'paper_a', 'chunk': 'This paper studies time series forecasting methods for retail demand. We compare classical baselines and neural forecasting models.'}, {'source': 'paper_b', 'chunk': 'This paper focuses on representation learning for sensor data. It includes transfer learning experiments and downstream tasks.'}]
+
+
+============= v3 修改 compare，避免只输入一个paper的时候也进行了比较，会让同一个paper在不同的路径下比较
+
+当用户只加载了一篇论文，pick(chunks_a, 0, fallback_b)会返回chunks_a[0]，会有一个问题：用户看到两列并排显示，误以为系统在比较两篇不同的论文，实际上左右两边都是同一篇论文的内容（甚至可能是同一个片段）
+最简单的处理方式：在compare.py的run()开头加一个前置检查，如果chunks_b为空，直接返回一个明确的提示，告诉用户需要提供两篇论文才能对比。
