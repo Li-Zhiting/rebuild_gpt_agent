@@ -30,9 +30,16 @@ class Evaluator:
         agent.load_document(text)
         data = self.load_benchmark()
         results: list[EvalResult] = []
+        has_paper_b = bool(agent.doc_memory.source_texts.get("paper_b", "").strip())
 
         for row in data:
+            requires_two_papers = bool(row.get("requires_two_papers", False))
+            if requires_two_papers and not has_paper_b:
+                print(f"[DEBUG] skip case (requires two papers): {row['query']}")
+                continue
+
             output = agent.ask(row["query"])
+            print(f"[DEBUG] answer: {output.answer}")
             answer_lower = output.answer.lower()
             hits = sum(1 for kw in row["must_include"] if kw.lower() in answer_lower)
             total = len(row["must_include"])

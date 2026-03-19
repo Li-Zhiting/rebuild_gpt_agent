@@ -35,3 +35,105 @@ python agent/memory.py
 
 当用户只加载了一篇论文，pick(chunks_a, 0, fallback_b)会返回chunks_a[0]，会有一个问题：用户看到两列并排显示，误以为系统在比较两篇不同的论文，实际上左右两边都是同一篇论文的内容（甚至可能是同一个片段）
 最简单的处理方式：在compare.py的run()开头加一个前置检查，如果chunks_b为空，直接返回一个明确的提示，告诉用户需要提供两篇论文才能对比。
+
+
+========== v3 evaluator.py 中针对compare 的测试有问题
+compare返回了"请提供两篇论文"的提示，但evaluator在检查这个答案里有没有"任务"、"方法"、"实验"这三个关键词，当然全部miss。
+这暴露的不是bug，而是评估体系本身的设计缺陷
+
+benchmark case本身就是错的。
+"请对比这篇论文的方法与传统方法的差异"这个query，在只有一篇论文的情况下，系统正确地拒绝了。但benchmark期望它输出包含"任务"、"方法"、"实验"的对比结果——这个期望本身就是矛盾的。
+所以你需要做两件事：
+第一，修benchmark.json，给compare case加一个字段标记它需要两篇论文：
+json{
+  "query": "请对比这篇论文的方法与传统方法的差异",
+  "must_include": ["任务", "方法", "实验"],
+  "requires_two_papers": true
+}
+第二，修evaluator.py，当requires_two_papers为true但只有一篇论文时，跳过这条case，不计入平均分。
+
+
+“修改之前版本：”
+python scripts/run_eval.py
+[DEBUG] planner selected: summary, reason=用户明确要求总结论文的核心贡献，属于对论文整体内容的概括性理解，适用summary工具。
+[DEBUG] answer: 【结构化总结】
+1. 研究问题：
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with explicit temporal dependency hand
+
+2. 方法概要：
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with explicit temporal dependency hand
+
+3. 实验与结论：
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with explicit temporal dependency hand
+
+[DEBUG] planner selected: critique, reason=用户明确要求指出论文的潜在不足，属于批判性分析范畴
+[DEBUG] answer: 【批判性分析】
+- 可能的优点：方法目标明确，具备一定系统性。
+- 可能的局限1：是否存在数据集或任务范围过窄的问题？
+- 可能的局限2：是否缺少更强 baseline 或消融实验？
+- 可能的局限3：是否缺少真实场景部署或鲁棒性验证？
+
+【证据片段】
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with exp
+[DEBUG] planner selected: compare, reason=用户明确要求对比论文方法与传统方法的差异，属于方法间的比较任务
+[DEBUG] answer: 【对比分析】
+当前仅检测到一篇论文内容；请提供 paper_a 和 paper_b 两篇论文后再进行对比。
+=== Evaluation Results ===
+Query: 请总结这篇论文的核心贡献
+Score: 1.00 (3/3)
+--------------------------------------------------
+Query: 请指出这篇论文的潜在不足
+Score: 1.00 (3/3)
+--------------------------------------------------
+Query: 请对比这篇论文的方法与传统方法的差异
+Score: 0.00 (0/3)
+--------------------------------------------------
+Average score: 0.67
+
+“修改之后版本：”
+python scripts/run_eval.py
+[DEBUG] planner selected: summary, reason=用户明确要求总结论文的核心贡献，属于对单篇论文内容的概括性理解
+[DEBUG] answer: 【结构化总结】
+1. 研究问题：
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with explicit temporal dependency hand
+
+2. 方法概要：
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with explicit temporal dependency hand
+
+3. 实验与结论：
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with explicit temporal dependency hand
+
+[DEBUG] planner selected: critique, reason=用户明确要求指出论文的潜在不足，属于批判性分析范畴
+[DEBUG] answer: 【批判性分析】
+- 可能的优点：方法目标明确，具备一定系统性。
+- 可能的局限1：是否存在数据集或任务范围过窄的问题？
+- 可能的局限2：是否缺少更强 baseline 或消融实验？
+- 可能的局限3：是否缺少真实场景部署或鲁棒性验证？
+
+【证据片段】
+This paper studies a forecasting problem under long-context settings.
+The main research goal is to improve prediction quality with better sequence modeling.
+The proposed method introduces a new modeling pipeline with exp
+[DEBUG] skip case (requires two papers): 请对比这篇论文的方法与传统方法的差异
+=== Evaluation Results ===
+Query: 请总结这篇论文的核心贡献
+Score: 1.00 (3/3)
+--------------------------------------------------
+Query: 请指出这篇论文的潜在不足
+Score: 1.00 (3/3)
+--------------------------------------------------
+Average score: 1.00

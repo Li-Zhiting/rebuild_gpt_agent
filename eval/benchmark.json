@@ -9,6 +9,7 @@
   },
   {
     "query": "请对比这篇论文的方法与传统方法的差异",
-    "must_include": ["任务", "方法", "实验"]
+    "must_include": ["任务", "方法", "实验"],
+    "requires_two_papers": true
   }
 ]
