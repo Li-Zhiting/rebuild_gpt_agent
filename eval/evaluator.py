@@ -86,6 +86,23 @@ class Evaluator:
         except Exception as exc:
             return 0.0, f"LLM评估失败：{exc}"
 
+    def _resolve_weights(self, row: dict[str, Any]) -> tuple[float, float]:
+        weights = row.get("weights", {})
+        try:
+            keyword_weight = float(weights.get("keyword", 0.5))
+            llm_weight = float(weights.get("llm", 0.5))
+        except Exception:
+            return 0.5, 0.5
+
+        if keyword_weight < 0 or llm_weight < 0:
+            return 0.5, 0.5
+
+        total = keyword_weight + llm_weight
+        if total <= 0:
+            return 0.5, 0.5
+
+        return keyword_weight / total, llm_weight / total
+
     def run(self, paper_path: str | Path) -> list[EvalResult]:
         text = load_text_file(paper_path)
         agent = ResearchPaperAgent()
@@ -107,7 +124,8 @@ class Evaluator:
             total = len(row["must_include"])
             keyword_score = hits / total if total else 0.0
             llm_score, llm_reason = self._llm_score(query=row["query"], answer=output.answer)
-            final_score = 0.5 * keyword_score + 0.5 * llm_score
+            keyword_weight, llm_weight = self._resolve_weights(row)
+            final_score = keyword_weight * keyword_score + llm_weight * llm_score
             results.append(
                 EvalResult(
                     query=row["query"],

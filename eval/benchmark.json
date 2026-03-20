@@ -1,15 +1,27 @@
 [
   {
     "query": "请总结这篇论文的核心贡献",
-    "must_include": ["研究", "方法", "实验"]
+    "must_include": ["研究", "方法", "实验"],
+    "weights": {
+      "keyword": 0.4,
+      "llm": 0.6
+    }
   },
   {
     "query": "请指出这篇论文的潜在不足",
-    "must_include": ["局限", "baseline", "鲁棒性"]
+    "must_include": ["局限", "baseline", "鲁棒性"],
+    "weights": {
+      "keyword": 0.2,
+      "llm": 0.8
+    }
   },
   {
     "query": "请对比这篇论文的方法与传统方法的差异",
     "must_include": ["任务", "方法", "实验"],
+    "weights": {
+      "keyword": 0.3,
+      "llm": 0.7
+    },
     "requires_two_papers": true
   }
 ]
