@@ -12,7 +12,7 @@ from eval.evaluator import Evaluator
 
 
 def main() -> None:
-    paper_path = ROOT / "data" / "sample_paper.txt"
+    paper_path = ROOT / "data" / "sample_paper2.txt"
     evaluator = Evaluator(settings.benchmark_path)
     results = evaluator.run(paper_path)
 
@@ -21,7 +21,10 @@ def main() -> None:
     for item in results:
         total_score += item.score
         print(f"Query: {item.query}")
-        print(f"Score: {item.score:.2f} ({item.hit_count}/{item.total_required})")
+        print(f"Keyword score: {item.keyword_score:.2f} ({item.hit_count}/{item.total_required})")
+        print(f"LLM score: {item.llm_score:.2f}")
+        print(f"Final score: {item.score:.2f}")
+        print(f"LLM reason: {item.llm_reason}")
         print("-" * 50)
 
     avg = total_score / len(results) if results else 0.0

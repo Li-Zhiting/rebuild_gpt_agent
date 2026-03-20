@@ -41,8 +41,8 @@ python scripts/run_eval.py
 
 ## 环境变量
 如需启用 LLM 路径，请配置：
-- `DASHSCOPE_API_KEY`
-- `DASHSCOPE_BASE_URL`（可选，未设置时使用默认兼容地址）
+- export DASHSCOPE_API_KEY=""
+- export DASHSCOPE_BASE_URL=""
 
 ## 项目结构（简化）
 ```text
