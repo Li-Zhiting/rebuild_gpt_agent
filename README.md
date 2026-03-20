@@ -28,6 +28,16 @@
 - 问题：单论文输入时若强行评估 compare，会拉低总体分数且不公平。
 - 改动：`eval/benchmark.json` 为 compare case 增加 `requires_two_papers: true`；`eval/evaluator.py` 在仅有一篇论文时自动跳过该 case，且**不计入平均分**。
 
+### 5. Evaluator：从单一关键词到“关键词+LLM”混合评分，并按任务加权
+- 问题：仅用关键词命中率做评测过于刚性，难以反映回答是否真正回应了用户问题与语义质量。
+- 第一阶段改动：在 evaluator 中加入 LLM 评测通道（输入 query + answer，输出 `0~1` 分数和一句理由），并与关键词分按 `0.5 / 0.5` 融合。
+- 实验观察：在 critique、compare 这类开放任务中，LLM 分与关键词分常出现较大偏差，说明关键词分在开放任务里代表性不足。
+- 第二阶段改动：按任务类型设置固定权重，在 `benchmark.json` 的每条 case 增加 `weights` 字段，由 `evaluator.py` 读取并计算最终分：
+  - summary：关键词 `0.4`，LLM `0.6`
+  - critique：关键词 `0.2`，LLM `0.8`
+  - compare：关键词 `0.3`，LLM `0.7`
+- 当前收益：结构化任务仍保留关键词约束，开放任务更依赖语义质量评估，整体评分更符合真实回答质量。
+
 ## 运行方式
 ```bash
 pip install -r requirements.txt
