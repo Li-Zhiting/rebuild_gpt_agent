@@ -1,66 +1,68 @@
-# Research Paper Assistant Agent (Scaffold)
+# Research Paper Assistant Agent
 
-这是一个从 `Rubuild-GPT` 升级而来的 **AI Agent 项目脚手架**，目标不是继续做一个简单的 LLM demo，而是搭建一个具备以下能力的最小可运行系统：
+## 项目简介
+一个面向论文场景的轻量 Agent：支持**总结（summary）**、**批判（critique）**、**对比（compare）**三类任务，并具备文档记忆、对话记忆和自动评测能力。
 
-- Planner：先拆解任务，再执行
-- Tools：按任务选择工具，而不是直接胡答
-- Memory：保存文档内容与历史交互
-- Evaluation：对回答质量做基准测试
+## 核心改进
+### 1. Planner：从关键词规则到 LLM 意图识别
+- 问题：仅靠关键词命中做路由，复杂输入下容易误判工具。
+- 改动：接入 LLM 进行工具选择，限定输出 `summary | compare | critique` 的结构化结果；同时保留 fallback 规则，提升稳健性。
 
-## 项目结构
+### 2. DocumentMemory：支持双论文与来源可追踪检索
+- 问题：原实现偏单文档，compare 场景无法稳定区分片段来源。
+- 改动：
+  - `load()` 支持加载两篇论文（`paper_a` / `paper_b`）。
+  - `top_k(query, source=...)` 支持按单篇或双篇检索。
+  - `top_k` 返回 `RetrievedChunk`（包含 `source` + `chunk`），避免来源信息丢失。
 
-```text
-rubuild_gpt_agent_upgrade/
-├── main.py                  # CLI 入口
-├── config.py                # 配置
-├── requirements.txt         # 依赖
-├── README.md
-├── agent/
-│   ├── app.py               # Agent 主流程
-│   ├── planner.py           # 任务规划
-│   ├── memory.py            # 对话与文档记忆
-│   └── llm.py               # LLM 抽象层
-├── tools/
-│   ├── base.py              # Tool 基类
-│   ├── summarize.py         # 摘要工具
-│   ├── critique.py          # 论文批判工具
-│   ├── compare.py           # 比较工具
-│   └── parser.py            # 文档解析与切分
-├── eval/
-│   ├── benchmark.json       # 测试样例
-│   └── evaluator.py         # 自动评估
-├── data/
-│   └── sample_paper.txt     # 示例文档
-└── scripts/
-    └── run_eval.py          # 评估入口
-```
+### 3. Tools：从固定模板到 LLM 驱动
+- 问题：固定模板输出僵硬，信息利用率低。
+- 改动：`summarize.py`、`critique.py`、`compare.py` 已改为 LLM 驱动：
+  - 先检索 chunk 证据，再调用 LLM。
+  - 强约束 JSON 输出并做解析/归一化。
+  - 解析失败或 API 异常时自动兜底到本地 fallback，保证可用性。
+- 额外稳定性改动：
+  - compare 在只有一篇论文时直接返回明确提示，不再伪造“两篇对比”的展示。
 
-## 先做什么
+### 4. Evaluator：跳过不适用 case，避免失真评分
+- 问题：单论文输入时若强行评估 compare，会拉低总体分数且不公平。
+- 改动：`eval/benchmark.json` 为 compare case 增加 `requires_two_papers: true`；`eval/evaluator.py` 在仅有一篇论文时自动跳过该 case，且**不计入平均分**。
 
-1. 把你的论文/项目文本放进 `data/`。
-2. 先跑 `main.py`，确认 Planner + Tool + Memory 能跑通。
-3. 再跑 `scripts/run_eval.py`，得到一个最基础的 benchmark 分数。
-4. 后续你可以继续加：
-   - RAG / FAISS
-   - 真正的 OpenAI / Qwen function calling
-   - Web search
-   - Streamlit UI
-
-## 运行
-
+## 运行方式
 ```bash
 pip install -r requirements.txt
 python main.py --paper data/sample_paper.txt --query "请总结这篇论文的核心贡献"
 python scripts/run_eval.py
 ```
 
-## 这个脚手架故意保持简洁
+## 使用说明
+- 当前 CLI 入口 `main.py` 默认接收单论文参数 `--paper`。
+- 双论文对比能力已在 `DocumentMemory` 与 `compare` 工具层实现；若要从 CLI 直接做双论文 compare，可后续扩展为 `--paper-a` / `--paper-b` 参数。
 
-因为你当前最大的缺口不是“功能多”，而是：
+## 环境变量
+如需启用 LLM 路径，请配置：
+- `DASHSCOPE_API_KEY`
+- `DASHSCOPE_BASE_URL`（可选，未设置时使用默认兼容地址）
 
-- 有没有 Planner
-- 有没有 Tool routing
-- 有没有 Memory
-- 有没有 Eval
-
-先把结构立起来，再谈复杂化。
+## 项目结构（简化）
+```text
+rebuild_gpt_agent/
+├── main.py
+├── config.py
+├── agent/
+│   ├── app.py
+│   ├── planner.py
+│   └── memory.py
+├── tools/
+│   ├── summarize.py
+│   ├── critique.py
+│   ├── compare.py
+│   └── parser.py
+├── eval/
+│   ├── benchmark.json
+│   └── evaluator.py
+├── data/
+│   └── sample_paper.txt
+└── scripts/
+    └── run_eval.py
+```
