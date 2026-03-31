@@ -2,7 +2,11 @@
   {
     "query": "请比较这两篇论文的方法差异。若当前只有一篇论文，请明确说明无法对比并指出缺失条件。",
     "case_type": "单论文拒绝",
-    "must_include": ["只有一篇", "无法对比", "需要两篇论文"],
+    "must_include": [
+      "只有一篇",
+      "无法对比",
+      "需要两篇论文"
+    ],
     "reference_answer": "当前上下文只有一篇论文内容，无法完成两篇论文的方法对比。请再提供第二篇论文（或其摘要/全文），我再从任务设定、方法机制和实验结论三个维度做结构化比较。",
     "eval_criteria": [
       "在单论文输入时，是否明确拒绝对比",
@@ -11,15 +15,22 @@
       "是否避免伪造另一篇论文信息"
     ],
     "weights": {
-      "keyword": 0.3,
-      "llm": 0.7
+      "keyword": 0.1,
+      "llm": 0.2,
+      "criteria": 0.7
     },
     "requires_two_papers": false
   },
   {
     "query": "请分别用“论文A/论文B”标注，比较两篇论文的研究任务与问题设定差异。",
     "case_type": "任务与问题设定",
-    "must_include": ["论文A", "论文B", "forecasting", "point processes", "任务不同"],
+    "must_include": [
+      "论文A",
+      "论文B",
+      "forecasting",
+      "point processes",
+      "任务不同"
+    ],
     "reference_answer": "论文A（sample_paper）关注long-context forecasting，核心目标是提升序列预测质量。论文B（sample_paper2）关注point processes中的参数估计，核心目标是解决MLE积分难题与SM不完整性。两者任务定义不同，前者偏预测性能，后者偏估计可行性与理论性质。",
     "eval_criteria": [
       "是否显式区分论文A与论文B",
@@ -28,15 +39,22 @@
       "是否避免编造额外研究目标"
     ],
     "weights": {
-      "keyword": 0.3,
-      "llm": 0.7
+      "keyword": 0.25,
+      "llm": 0.3,
+      "criteria": 0.45
     },
     "requires_two_papers": true
   },
   {
     "query": "请分别用“论文A/论文B”标注，对比两篇论文的方法创新点与核心瓶颈。",
     "case_type": "方法创新对比",
-    "must_include": ["论文A", "论文B", "temporal dependency", "WSM", "normalizing constant"],
+    "must_include": [
+      "论文A",
+      "论文B",
+      "temporal dependency",
+      "WSM",
+      "normalizing constant"
+    ],
     "reference_answer": "论文A的方法创新在于新的建模pipeline与更明确的temporal dependency处理，用于提升长上下文预测效果。论文B的方法创新是提出WSM，用来修复implicit SM在一般点过程下不完整的问题，并绕开normalizing constant相关计算困难。前者主要优化预测建模，后者主要优化统计估计可行性。",
     "eval_criteria": [
       "是否分别给出A/B的创新点",
@@ -45,15 +63,22 @@
       "是否避免把两篇方法混为一谈"
     ],
     "weights": {
-      "keyword": 0.3,
-      "llm": 0.7
+      "keyword": 0.25,
+      "llm": 0.3,
+      "criteria": 0.45
     },
     "requires_two_papers": true
   },
   {
     "query": "请分别用“论文A/论文B”标注，比较两篇论文的实验证据与结论表达方式。",
     "case_type": "实验证据对比",
-    "must_include": ["论文A", "论文B", "multiple benchmarks", "与MLE一致", "existing SM fails"],
+    "must_include": [
+      "论文A",
+      "论文B",
+      "multiple benchmarks",
+      "与MLE一致",
+      "existing SM fails"
+    ],
     "reference_answer": "论文A的实验证据主要是multiple benchmarks上的性能提升。论文B则给出synthetic data恢复真实参数、real data与MLE一致，并强调existing SM fails。两者都给出实验支持，但证据口径不同：A偏预测效果，B偏估计正确性与方法可行性。",
     "eval_criteria": [
       "是否分别引用A/B的实验表述",
@@ -63,14 +88,21 @@
     ],
     "weights": {
       "keyword": 0.3,
-      "llm": 0.7
+      "llm": 0.3,
+      "criteria": 0.4
     },
     "requires_two_papers": true
   },
   {
     "query": "请分别用“论文A/论文B”标注，给出一段综合对比结论（共同点+最大差异）。",
     "case_type": "综合对比",
-    "must_include": ["论文A", "论文B", "共同点", "最大差异", "不可直接横比"],
+    "must_include": [
+      "论文A",
+      "论文B",
+      "共同点",
+      "最大差异",
+      "不可直接横比"
+    ],
     "reference_answer": "共同点是论文A与论文B都通过方法改进来提升结果，并使用实验支撑主张。最大差异在于研究对象与评估重点：论文A面向长上下文预测，重在预测性能；论文B面向点过程参数估计，重在估计可行性、理论性质与MLE一致性。因此两者结论不可直接横比，应在各自任务框架下评估贡献。",
     "eval_criteria": [
       "是否同时给出共同点与差异",
@@ -79,8 +111,9 @@
       "是否两篇论文均被引用"
     ],
     "weights": {
-      "keyword": 0.3,
-      "llm": 0.7
+      "keyword": 0.2,
+      "llm": 0.3,
+      "criteria": 0.5
     },
     "requires_two_papers": true
   }

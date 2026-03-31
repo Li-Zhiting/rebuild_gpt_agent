@@ -14,11 +14,14 @@ from tools.parser import load_text_file
 
 @dataclass(slots=True)
 class EvalResult:
+    case_type: str
     query: str
     hit_count: int
     total_required: int
     keyword_score: float
     llm_score: float
+    criteria_score: float
+    criteria_detail: dict[str, bool]
     llm_reason: str
     score: float
 
@@ -97,22 +100,77 @@ class Evaluator:
         except Exception as exc:
             return 0.0, f"LLM评估失败：{exc}"
 
-    def _resolve_weights(self, row: dict[str, Any]) -> tuple[float, float]:
+    def _criteria_score(
+        self, answer: str, criteria_list: list[str] | tuple[str, ...]
+    ) -> tuple[float, dict[str, bool]]:
+        criteria = [str(item).strip() for item in criteria_list if str(item).strip()]
+        if not criteria:
+            return 0.0, {}
+
+        system_prompt = (
+            "你是一个回答标准检查器。\n"
+            "任务：根据给定的 answer，逐条判断 criteria 是否满足。\n"
+            "输出必须是严格 JSON 对象，key 必须与输入 criteria 原文完全一致，value 必须是 true 或 false。\n"
+            "禁止输出任何额外文本。"
+        )
+        user_prompt = (
+            f"answer:\n{answer}\n\n"
+            f"criteria:\n{json.dumps(criteria, ensure_ascii=False)}\n\n"
+            "请输出 JSON 对象。"
+        )
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                temperature=0,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            content = response.choices[0].message.content.strip()
+            parsed = json.loads(content)
+            if not isinstance(parsed, dict):
+                raise ValueError("criteria 响应不是 JSON 对象")
+
+            detail: dict[str, bool] = {}
+            for criterion in criteria:
+                value = parsed.get(criterion, False)
+                if isinstance(value, bool):
+                    detail[criterion] = value
+                elif isinstance(value, str):
+                    detail[criterion] = value.strip().lower() in {"true", "yes", "1"}
+                elif isinstance(value, (int, float)):
+                    detail[criterion] = bool(value)
+                else:
+                    detail[criterion] = False
+
+            true_count = sum(1 for passed in detail.values() if passed)
+            score = true_count / len(criteria) if criteria else 0.0
+            return score, detail
+        except Exception:
+            return 0.0, {criterion: False for criterion in criteria}
+
+    def _resolve_weights(self, row: dict[str, Any]) -> tuple[float, float, float]:
         weights = row.get("weights", {})
         try:
             keyword_weight = float(weights.get("keyword", 0.5))
             llm_weight = float(weights.get("llm", 0.5))
+            criteria_weight = float(weights.get("criteria", 0.0))
         except Exception:
-            return 0.5, 0.5
+            return 0.5, 0.5, 0.0
 
-        if keyword_weight < 0 or llm_weight < 0:
-            return 0.5, 0.5
+        if keyword_weight < 0 or llm_weight < 0 or criteria_weight < 0:
+            return 0.5, 0.5, 0.0
 
-        total = keyword_weight + llm_weight
+        total = keyword_weight + llm_weight + criteria_weight
         if total <= 0:
-            return 0.5, 0.5
+            return 0.5, 0.5, 0.0
 
-        return keyword_weight / total, llm_weight / total
+        return (
+            keyword_weight / total,
+            llm_weight / total,
+            criteria_weight / total,
+        )
 
     def run(self, paper_path: str | Path) -> list[EvalResult]:
         text = load_text_file(paper_path)
@@ -123,10 +181,15 @@ class Evaluator:
         has_paper_b = bool(agent.doc_memory.source_texts.get("paper_b", "").strip())
 
         for row in data:
-            requires_two_papers = bool(row.get("requires_two_papers", False))
-            if requires_two_papers and not has_paper_b:
-                print(f"[DEBUG] skip case (requires two papers): {row['query']}")
-                continue
+            # Only enforce paper-count constraints when the field is explicitly provided.
+            if "requires_two_papers" in row:
+                requires_two_papers = bool(row.get("requires_two_papers"))
+                if requires_two_papers and not has_paper_b:
+                    print(f"[DEBUG] skip case (requires two papers): {row['query']}")
+                    continue
+                if (not requires_two_papers) and has_paper_b:
+                    print(f"[DEBUG] skip case (requires single paper): {row['query']}")
+                    continue
 
             output = agent.ask(row["query"])
             print(f"[DEBUG] answer: {output.answer}")
@@ -139,15 +202,28 @@ class Evaluator:
                 answer=output.answer,
                 reference_answer=row.get("reference_answer", ""),
             )
-            keyword_weight, llm_weight = self._resolve_weights(row)
-            final_score = keyword_weight * keyword_score + llm_weight * llm_score
+            criteria_raw = row.get("eval_criteria", [])
+            criteria_list = criteria_raw if isinstance(criteria_raw, list) else []
+            criteria_score, criteria_detail = self._criteria_score(
+                answer=output.answer,
+                criteria_list=criteria_list,
+            )
+            keyword_weight, llm_weight, criteria_weight = self._resolve_weights(row)
+            final_score = (
+                keyword_weight * keyword_score
+                + llm_weight * llm_score
+                + criteria_weight * criteria_score
+            )
             results.append(
                 EvalResult(
+                    case_type=str(row.get("case_type", "unknown")),
                     query=row["query"],
                     hit_count=hits,
                     total_required=total,
                     keyword_score=keyword_score,
                     llm_score=llm_score,
+                    criteria_score=criteria_score,
+                    criteria_detail=criteria_detail,
                     llm_reason=llm_reason,
                     score=final_score,
                 )

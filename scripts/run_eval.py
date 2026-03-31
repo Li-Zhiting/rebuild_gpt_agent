@@ -20,9 +20,18 @@ def main() -> None:
     total_score = 0.0
     for item in results:
         total_score += item.score
+        print(f"Case type: {item.case_type}")
         print(f"Query: {item.query}")
         print(f"Keyword score: {item.keyword_score:.2f} ({item.hit_count}/{item.total_required})")
         print(f"LLM score: {item.llm_score:.2f}")
+        print(f"Criteria score: {item.criteria_score:.2f}")
+        print("Criteria detail:")
+        if item.criteria_detail:
+            for criterion, passed in item.criteria_detail.items():
+                mark = "✓" if passed else "✗"
+                print(f"  - {criterion}: {mark}")
+        else:
+            print("  - (none)")
         print(f"Final score: {item.score:.2f}")
         print(f"LLM reason: {item.llm_reason}")
         print("-" * 50)
