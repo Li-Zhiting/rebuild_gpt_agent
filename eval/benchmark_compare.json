@@ -1,0 +1,87 @@
+[
+  {
+    "query": "请比较这两篇论文的研究任务与问题设定差异。",
+    "case_type": "任务与问题设定",
+    "must_include": ["long-context", "forecasting", "point processes", "parameter estimation", "任务不同"],
+    "reference_answer": "两篇论文的任务设定本质不同。sample_paper关注long-context下的forecasting，核心是提升序列预测质量；sample_paper2关注point processes中的parameter estimation，核心是解决MLE积分难题与SM不完整性。前者更偏时序预测流程改进，后者更偏统计估计与理论可识别性问题，因此任务不同、评价重点也不同。",
+    "eval_criteria": [
+      "是否同时准确描述两篇论文任务",
+      "是否明确指出任务不可直接等价比较",
+      "是否避免把point process误写成forecasting任务",
+      "是否避免编造额外研究目标"
+    ],
+    "weights": {
+      "keyword": 0.3,
+      "llm": 0.7
+    },
+    "requires_two_papers": true
+  },
+  {
+    "query": "请对比两篇论文的方法创新点，各自解决了什么核心瓶颈？",
+    "case_type": "方法创新对比",
+    "must_include": ["temporal dependency", "WSM", "implicit SM", "normalizing constant", "瓶颈"],
+    "reference_answer": "sample_paper的方法创新在于新的建模pipeline与更明确的temporal dependency处理，意在提升长上下文预测表现。sample_paper2的方法创新是提出WSM，针对implicit SM在一般点过程下不完整、以及normalizing constant相关计算困难的问题。前者主要优化预测建模能力，后者主要修复估计理论与可计算性瓶颈。",
+    "eval_criteria": [
+      "是否分别给出两篇论文的方法创新",
+      "是否指出sample_paper2与implicit SM/normalizing constant相关",
+      "是否指出sample_paper与temporal dependency相关",
+      "是否避免把两篇方法混为一谈"
+    ],
+    "weights": {
+      "keyword": 0.3,
+      "llm": 0.7
+    },
+    "requires_two_papers": true
+  },
+  {
+    "query": "请比较两篇论文的实验证据强度与结论表达方式。",
+    "case_type": "实验证据对比",
+    "must_include": ["multiple benchmarks", "synthetic data", "real data", "consistent with MLE", "证据强度"],
+    "reference_answer": "sample_paper给出的证据是“在multiple benchmarks上优于若干baseline”，属于性能提升型陈述。sample_paper2则同时给出synthetic data可恢复真实参数、real data上与MLE一致，并强调已有SM失败，属于‘理论+估计正确性+实证’结合的表达。两者证据强度很难直接按单一指标比较，但结论表达上，sample_paper2对估计正确性的论证更聚焦。",
+    "eval_criteria": [
+      "是否引用两篇论文各自的实验表达",
+      "是否提到synthetic/real与MLE一致这些关键点",
+      "是否避免捏造具体SOTA数值",
+      "是否体现‘不同任务导致证据口径不同’"
+    ],
+    "weights": {
+      "keyword": 0.3,
+      "llm": 0.7
+    },
+    "requires_two_papers": true
+  },
+  {
+    "query": "如果从可落地应用角度看，两篇论文各自更适合什么场景？",
+    "case_type": "应用场景对比",
+    "must_include": ["序列预测", "事件建模", "可部署", "场景", "局限"],
+    "reference_answer": "从应用角度看，sample_paper更贴近通用序列预测场景，适合需要处理长上下文依赖的任务。sample_paper2更适合事件建模和点过程参数学习场景，尤其是需要避免高维积分带来的计算困难时。两者都需结合具体数据与系统约束评估可部署性：前者可能面临泛化与鲁棒性问题，后者需关注模型假设是否满足其理论前提。",
+    "eval_criteria": [
+      "是否给出两篇论文不同的应用场景匹配",
+      "是否包含可部署性与局限意识",
+      "是否避免绝对化结论（如‘必然更好’）",
+      "是否不偏离论文提供的信息边界"
+    ],
+    "weights": {
+      "keyword": 0.3,
+      "llm": 0.7
+    },
+    "requires_two_papers": true
+  },
+  {
+    "query": "请给出一段综合对比结论：这两篇论文最大的共同点和最大差异分别是什么？",
+    "case_type": "综合对比",
+    "must_include": ["共同点", "差异", "方法改进", "评估重点", "不可直接横比"],
+    "reference_answer": "共同点在于两篇论文都围绕‘方法改进以提升效果’展开，并都使用实验来支撑主张。最大差异在于研究对象与评估重点：sample_paper面向长上下文预测，关注预测性能；sample_paper2面向点过程参数估计，关注估计可行性、理论性质与MLE一致性。正因任务定义不同，它们的结果不可直接横比，应在各自问题框架内评价贡献。",
+    "eval_criteria": [
+      "是否同时给出共同点与差异",
+      "是否指出评估重点不同",
+      "是否强调不可直接横向比数值",
+      "是否表述清晰且无编造"
+    ],
+    "weights": {
+      "keyword": 0.3,
+      "llm": 0.7
+    },
+    "requires_two_papers": true
+  }
+]
