@@ -47,7 +47,9 @@ class Evaluator:
     def _build_eval_system_prompt(self) -> str:
         return (
             "你是一个回答质量评估器。\n"
-            "你的唯一任务是：基于用户 query 和 agent answer，评估回答是否真正回答了问题、质量如何。\n\n"
+            "你的唯一任务是：基于用户 query、reference_answer 和 agent answer，"
+            "评估回答是否真正回答了问题、质量如何。\n"
+            "你必须重点对照 reference_answer 的核心要点，判断 agent answer 的覆盖度与准确性。\n\n"
             "你必须严格输出 JSON，且只能是如下格式：\n"
             "{\n"
             '  "score": 0.0,\n'
@@ -59,8 +61,17 @@ class Evaluator:
             "3. 仅输出 JSON，禁止输出任何额外文本。"
         )
 
-    def _llm_score(self, query: str, answer: str) -> tuple[float, str]:
-        user_prompt = f"query:\n{query}\n\nanswer:\n{answer}"
+    def _llm_score(
+        self, query: str, answer: str, reference_answer: str = ""
+    ) -> tuple[float, str]:
+        ref_text = reference_answer.strip() if isinstance(reference_answer, str) else ""
+        if not ref_text:
+            ref_text = "（未提供）"
+        user_prompt = (
+            f"query:\n{query}\n\n"
+            f"reference_answer:\n{ref_text}\n\n"
+            f"answer:\n{answer}"
+        )
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -123,7 +134,11 @@ class Evaluator:
             hits = sum(1 for kw in row["must_include"] if kw.lower() in answer_lower)
             total = len(row["must_include"])
             keyword_score = hits / total if total else 0.0
-            llm_score, llm_reason = self._llm_score(query=row["query"], answer=output.answer)
+            llm_score, llm_reason = self._llm_score(
+                query=row["query"],
+                answer=output.answer,
+                reference_answer=row.get("reference_answer", ""),
+            )
             keyword_weight, llm_weight = self._resolve_weights(row)
             final_score = keyword_weight * keyword_score + llm_weight * llm_score
             results.append(
